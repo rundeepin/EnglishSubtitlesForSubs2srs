@@ -8,7 +8,7 @@ from tkinter import filedialog
 import os
 import ntpath
 
-
+# 选择时间轴和字幕正文
 def select_subtitle(raw_data):
     data = []
     for line in raw_data:
@@ -24,7 +24,7 @@ def select_subtitle(raw_data):
         index += 1
     return subtitle
 
-
+# 同一条时间轴内字幕拼成一行
 def merge_line(subtitle):
     index = 0
     while index < len(subtitle) - 1:
@@ -34,7 +34,7 @@ def merge_line(subtitle):
                 subtitle.pop(index + 1)
         index += 1
 
-
+# 判断是不是一条字幕一行
 def is_1time_1line(subtitle):
     index = 0
     while index < len(subtitle):
@@ -44,7 +44,7 @@ def is_1time_1line(subtitle):
             return False
     return True
 
-
+# 以上三个函数合并使用得到初始字幕
 def merge_subtitle(raw_data):
     subtitle = select_subtitle(raw_data)
     while True:
@@ -54,32 +54,10 @@ def merge_subtitle(raw_data):
             merge_line(subtitle)
     return subtitle
 
-print("请选择utf-8格式的srt >>>")
-TextPath = filedialog.askopenfilename(filetypes=[('srt file','*.srt')])
-filename = os.path.basename(TextPath)
-
-with open(TextPath, 'r', encoding='utf-8') as file:
-    raw_data = file.readlines()
-
-data = merge_subtitle(raw_data)
-
-# print(data)
-
-
-index = 1
-while index < len(data):
-    if data[index][0] == '(' and data[index][-1] == ')':
-        del data[index]
-        del data[index-1]
-    else:
-        # if ' ' in data[index]:
-        #     data[index].replace('  ',' ')
-        index += 2
-
-
+# 处理句首字母小写的句子
 def start_merge(data):
     index = 3
-    while index < len(data):
+    while index < len(data) - 1:
         if data[index][0].islower():
             data[index - 2] += ' ' + data[index]
             del data[index - 3][1]
@@ -90,11 +68,11 @@ def start_merge(data):
             index += 2
     return data
 
-
+# 处理句末是逗号或者小写字母无标点的句子
 def end_merge(data):
     index = 1
-    while index < len(data):
-        if data[index][-1:-3] == '...' or data[index][-1].islower() or data[index][-1] == ',':
+    while index < len(data) - 1:
+        if data[index][-1].islower() or data[index][-1] == ',':
             data[index] += ' ' + data[index + 2]
             del data[index - 1][1]
             data[index - 1].append(data[index + 1][1])
@@ -105,22 +83,39 @@ def end_merge(data):
     return data
 
 
+
+print("请选择utf-8格式的srt >>>")
+TextPath = filedialog.askopenfilename(filetypes=[('srt file','*.srt')])
+filename = os.path.basename(TextPath)
+
+with open(TextPath, 'r', encoding='utf-8') as file:
+    raw_data = file.readlines()
+
+data = merge_subtitle(raw_data)
+
+# 删除只有括号说明文本的字幕，经测试不能全部删掉，留有少量。
+# 待修订
+index = 1
+while index < len(data):
+    if data[index][0] == '(' and data[index][-1] == ')':
+        del data[index]
+        del data[index-1]
+    else:
+        index += 2
+
+# 不同时间轴字幕拼合
 subtitle = end_merge(start_merge(end_merge(start_merge(data))))
 
-# print(subtitle)
-
-
-subtitleOut = open(filename+'_Final.srt', 'w', encoding="utf-8")
-
+# 写出到结果
+subtitleOutput = open(filename+'_Final.srt', 'w', encoding="utf-8")
 list_num = 1
 i = 0
 while i < len(subtitle) - 1:
-    subtitleOut.write(str(list_num) + '\n')
-    subtitleOut.write(subtitle[i][0] + ' --> ' + subtitle[i][1] + '\n')
-    subtitleOut.write(subtitle[i + 1] + '\n\n')
+    subtitleOutput.write(str(list_num) + '\n')
+    subtitleOutput.write(subtitle[i][0] + ' --> ' + subtitle[i][1] + '\n')
+    subtitleOutput.write(subtitle[i + 1] + '\n\n')
     i += 2
     list_num += 1
-
-subtitleOut.close()
+subtitleOutput.close()
 
 print('finished')
