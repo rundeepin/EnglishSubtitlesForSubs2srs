@@ -31,6 +31,8 @@ def select_subtitle(raw_data):
 def merge_line(subtitle):
     index = 0
     while index < len(subtitle) - 1:
+        if '{\an8}' in subtitle[index]:
+            subtitle[index] = re.sub('{\an8}','',subtitle[index])
         if any(c.isalpha() for c in subtitle[index]):
             if any(c.isalpha() for c in subtitle[index + 1]):
                 subtitle[index] += ' ' + subtitle[index + 1]
@@ -66,6 +68,15 @@ def del_useless(data):
     while index < len(data):
         if '(' and ')' in data[index]:
             data[index] = re.sub(r'\([^(]+\)', ' ', data[index])
+            if any(c.isalpha() for c in data[index]):
+                if data[index].endswith("..."):
+                    data[index] = re.sub(r'\.{3}', ',', data[index])
+                index += 2
+            else:
+                del data[index]
+                del data[index - 1]
+        elif '[' and ']' in data[index]:
+            data[index] = re.sub(r'\[[^(]+\]', ' ', data[index])
             if any(c.isalpha() for c in data[index]):
                 if data[index].endswith("..."):
                     data[index] = re.sub(r'\.{3}', ',', data[index])
